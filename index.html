@@ -132,6 +132,91 @@
 
   .empty-state{padding:60px 20px;text-align:center;color:var(--muted);}
 
+  body.no-scroll{overflow:hidden;}
+
+  /* ============ ANNONCES ============ */
+  .bell-btn{
+    position:relative;width:38px;height:38px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    background:transparent;border:1px solid var(--line);color:var(--ink);
+  }
+  .bell-btn svg{width:18px;height:18px;}
+  .bell-badge{
+    position:absolute;top:-5px;right:-5px;
+    background:var(--warn);color:#fff;
+    font-size:10px;font-weight:700;
+    min-width:16px;height:16px;border-radius:20px;
+    display:flex;align-items:center;justify-content:center;
+    padding:0 3px;font-family:'JetBrains Mono',monospace;
+  }
+  .ann-backdrop{
+    position:fixed;inset:0;background:rgba(23,27,31,.4);
+    z-index:190;display:none;
+  }
+  .ann-backdrop.open{display:block;}
+  .announcements-sidebar{
+    position:fixed;top:0;left:0;
+    width:min(85vw,320px);height:100vh;
+    background:var(--surface);
+    border-right:1px solid var(--line);
+    z-index:200;
+    display:flex;flex-direction:column;
+    overflow:hidden;
+    transform:translateX(-100%);
+    transition:transform .28s ease;
+  }
+  .announcements-sidebar.open{transform:translateX(0);}
+  .ann-header{
+    padding:16px 16px 12px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+    flex-shrink:0;
+  }
+  .ann-header h2{font-size:15px;margin:0;}
+  .ann-header-actions{display:flex;gap:6px;}
+  .ann-header-actions button{
+    width:30px;height:30px;border-radius:7px;
+    background:transparent;border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;color:var(--muted);
+  }
+  .ann-header-actions button:hover{color:var(--accent-dark);border-color:var(--accent);}
+  .ann-header-actions svg{width:15px;height:15px;}
+  .ann-filter-row{padding:10px 16px;border-bottom:1px solid var(--line);display:none;flex-shrink:0;}
+  .ann-filter-row.open{display:block;}
+  .ann-filter-row select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;background:var(--bg);}
+  .ann-list{
+    flex:1 1 auto;min-height:0;
+    overflow-y:auto;padding:8px 0;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .ann-item{
+    padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;
+    display:block;position:relative;
+  }
+  .ann-item:hover{background:var(--bg);}
+  .ann-item-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+  .ann-item-title{font-size:13.5px;font-weight:600;}
+  .ann-new-badge{
+    font-size:9.5px;font-weight:700;color:#fff;background:var(--warn);
+    padding:1.5px 6px;border-radius:10px;font-family:'JetBrains Mono',monospace;
+  }
+  .ann-item-desc{font-size:12.5px;color:var(--muted);line-height:1.45;margin:0 0 6px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .ann-item-meta{font-size:10.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  .ann-empty{padding:30px 16px;text-align:center;color:var(--muted);font-size:13px;}
+
+  @media (min-width:900px){
+    .bell-btn{display:none;}
+    .ann-backdrop{display:none !important;}
+    .announcements-sidebar{
+      transform:none;
+      top:var(--header-h,65px);
+      height:calc(100vh - var(--header-h,65px));
+      box-shadow:none;
+    }
+    main{margin-left:calc(min(85vw,320px) + 20px);}
+  }
+
   /* Modals */
   .overlay{
     position:fixed;inset:0;background:rgba(23,27,31,.45);
@@ -229,10 +314,33 @@
     </div>
   </div>
   <div class="header-right">
+    <button class="bell-btn" id="bellBtn" aria-label="Annonces">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <span class="bell-badge" id="bellBadge" style="display:none;">0</span>
+    </button>
     <span class="doc-count mono" id="docCount">— docs</span>
     <button class="btn-primary" id="openUploadFlow">+ Publier</button>
   </div>
 </header>
+
+<div class="ann-backdrop" id="annBackdrop"></div>
+<aside class="announcements-sidebar" id="announcementsSidebar">
+  <div class="ann-header">
+    <h2>📢 Annonces</h2>
+    <div class="ann-header-actions">
+      <button id="annFilterToggle" aria-label="Filtrer" title="Filtrer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+      </button>
+      <button id="annAddToggle" aria-label="Nouvelle annonce" title="Nouvelle annonce">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="ann-filter-row" id="annFilterRow">
+    <select id="annTypeFilter"><option value="">Tous les types</option></select>
+  </div>
+  <div class="ann-list" id="annList"></div>
+</aside>
 
 <main>
   <div class="controls">
@@ -243,6 +351,71 @@
   <div class="result-meta" id="resultMeta"></div>
   <div class="doc-list" id="docList"></div>
 </main>
+
+<!-- Détail d'une annonce -->
+<div class="overlay" id="annDetailOverlay">
+  <div class="modal" style="max-width:480px;">
+    <button class="close-x" onclick="closeOverlay('annDetailOverlay')">✕</button>
+    <div class="doc-title-row" style="margin-bottom:6px;">
+      <span class="badge" id="annDetailBadge"></span>
+    </div>
+    <h2 id="annDetailTitle" style="margin:0 0 6px;font-size:18px;"></h2>
+    <p class="sub" id="annDetailMeta" style="margin-bottom:16px;"></p>
+    <p id="annDetailContenu" style="font-size:14px;line-height:1.6;white-space:pre-wrap;"></p>
+  </div>
+</div>
+
+<!-- Nouvelle annonce -->
+<div class="overlay sidebar-mode" id="annCreateOverlay">
+  <div class="modal sidebar-panel">
+    <button class="close-x" onclick="closeOverlay('annCreateOverlay')">✕</button>
+    <h2>Nouvelle annonce</h2>
+    <p class="sub" id="annCreateAs"></p>
+
+    <div class="field">
+      <label>Titre</label>
+      <input type="text" id="annTitre">
+    </div>
+
+    <div class="field">
+      <label>Type</label>
+      <select id="annType">
+        <optgroup label="Devoir">
+          <option value="Devoir">Devoir</option>
+          <option value="Examen">Examen</option>
+          <option value="Rattrapage">Rattrapage</option>
+        </optgroup>
+        <optgroup label="Cours">
+          <option value="Absence prof">Absence prof</option>
+          <option value="Déplacement de cours">Déplacement de cours</option>
+          <option value="Changement de classe">Changement de classe</option>
+        </optgroup>
+        <optgroup label="Annonce">
+          <option value="Annonce">Mot des admins</option>
+        </optgroup>
+        <optgroup label="Autre">
+          <option value="Autre">Autre</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Description courte (aperçu dans la liste)</label>
+      <textarea id="annDescription" style="min-height:50px;"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Contenu complet</label>
+      <textarea id="annContenu" style="min-height:130px;"></textarea>
+    </div>
+
+    <p class="error-msg" id="annCreateError"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeOverlay('annCreateOverlay')">Annuler</button>
+      <button class="btn-submit" id="annCreateSubmit">Publier</button>
+    </div>
+  </div>
+</div>
 
 <!-- Lecteur vidéo -->
 <div class="overlay" id="playerOverlay">
@@ -485,16 +658,27 @@ function closeOverlay(id){
 }
 
 // ============================================================
-// LOGIN UPLOADEUR
+// LOGIN UPLOADEUR (réutilisé pour Document et Annonce)
 // ============================================================
-document.getElementById('openUploadFlow').addEventListener('click', async () => {
+let pendingAction = null; // 'document' | 'announcement'
+
+document.getElementById('openUploadFlow').addEventListener('click', () => requestUploaderAccess('document'));
+document.getElementById('annAddToggle').addEventListener('click', () => requestUploaderAccess('announcement'));
+
+async function requestUploaderAccess(action){
+  pendingAction = action;
   const { data: { session } } = await sb.auth.getSession();
   if (session){
     const ok = await checkUploaderStatus(session.user.id);
-    if (ok) { openUploadModal(); return; }
+    if (ok) { runPendingAction(); return; }
   }
   openOverlay('loginOverlay');
-});
+}
+
+function runPendingAction(){
+  if (pendingAction === 'document') openUploadModal();
+  if (pendingAction === 'announcement') openAnnouncementModal();
+}
 
 async function checkUploaderStatus(userId){
   const { data, error } = await sb.from('uploaders').select('*').eq('id', userId).single();
@@ -528,7 +712,7 @@ document.getElementById('loginSubmit').addEventListener('click', async () => {
   closeOverlay('loginOverlay');
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPassword').value = '';
-  openUploadModal();
+  runPendingAction();
 });
 
 // ============================================================
@@ -653,9 +837,179 @@ function resetUploadForm(){
 }
 
 // ============================================================
+// ANNONCES
+// ============================================================
+const ANNOUNCEMENT_TYPES = ['Devoir','Examen','Rattrapage','Absence prof','Déplacement de cours','Changement de classe','Annonce','Autre'];
+const ANN_GROUP_STYLE = {
+  'Devoir':   {bg:'#FBE7E4', fg:'#C0392B'},
+  'Examen':   {bg:'#FBE7E4', fg:'#C0392B'},
+  'Rattrapage': {bg:'#FBE7E4', fg:'#C0392B'},
+  'Absence prof': {bg:'#E5EEF6', fg:'#3B6FA0'},
+  'Déplacement de cours': {bg:'#E5EEF6', fg:'#3B6FA0'},
+  'Changement de classe': {bg:'#E5EEF6', fg:'#3B6FA0'},
+  'Annonce':  {bg:'#E4F3F2', fg:'#0B5F5E'},
+  'Autre':    {bg:'#EFEFEE', fg:'#6B7278'}
+};
+
+let allAnnouncements = [];
+let unseenAnnouncementIds = new Set();
+const LAST_SEEN_KEY = 'isi_connect_last_seen_ann';
+
+populateSelect(document.getElementById('annTypeFilter'), ANNOUNCEMENT_TYPES, 'Tous les types');
+
+async function loadAnnouncements(){
+  const { data, error } = await sb.from('announcements').select('*').order('created_at', { ascending: false });
+  if (error){ console.error(error); return; }
+  allAnnouncements = data;
+
+  const lastSeen = localStorage.getItem(LAST_SEEN_KEY);
+  unseenAnnouncementIds = new Set(
+    data.filter(a => !lastSeen || new Date(a.created_at) > new Date(lastSeen)).map(a => a.id)
+  );
+  updateBellBadge();
+  renderAnnouncements();
+
+  // Sidebar toujours visible sur PC → considérée comme "vue" tout de suite.
+  // Sur mobile, on ne marque comme vu qu'à l'ouverture du tiroir (voir bellBtn).
+  if (window.matchMedia('(min-width:900px)').matches){
+    localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
+  }
+}
+
+function updateBellBadge(){
+  const badge = document.getElementById('bellBadge');
+  if (unseenAnnouncementIds.size > 0){
+    badge.textContent = unseenAnnouncementIds.size;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderAnnouncements(){
+  const typeFilter = document.getElementById('annTypeFilter').value;
+  const filtered = typeFilter ? allAnnouncements.filter(a => a.type === typeFilter) : allAnnouncements;
+
+  const list = document.getElementById('annList');
+  if (filtered.length === 0){
+    list.innerHTML = `<div class="ann-empty">Aucune annonce pour l'instant.</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(a => {
+    const style = ANN_GROUP_STYLE[a.type] || ANN_GROUP_STYLE['Autre'];
+    const date = new Date(a.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'});
+    const isNew = unseenAnnouncementIds.has(a.id);
+    return `
+      <div class="ann-item" data-ann-id="${a.id}">
+        <div class="ann-item-top">
+          <span class="ann-item-title">${escapeHtml(a.titre)}</span>
+          <span class="badge" style="background:${style.bg};color:${style.fg}">${a.type}</span>
+          ${isNew ? '<span class="ann-new-badge">NOUVEAU</span>' : ''}
+        </div>
+        <p class="ann-item-desc">${escapeHtml(a.description)}</p>
+        <div class="ann-item-meta">${date}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('annTypeFilter').addEventListener('change', renderAnnouncements);
+
+document.getElementById('annList').addEventListener('click', (e) => {
+  const item = e.target.closest('[data-ann-id]');
+  if (!item) return;
+  const a = allAnnouncements.find(x => x.id === item.dataset.annId);
+  if (!a) return;
+  const style = ANN_GROUP_STYLE[a.type] || ANN_GROUP_STYLE['Autre'];
+  document.getElementById('annDetailBadge').textContent = a.type;
+  document.getElementById('annDetailBadge').style.background = style.bg;
+  document.getElementById('annDetailBadge').style.color = style.fg;
+  document.getElementById('annDetailTitle').textContent = a.titre;
+  document.getElementById('annDetailMeta').textContent = new Date(a.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'});
+  document.getElementById('annDetailContenu').textContent = a.contenu;
+  openOverlay('annDetailOverlay');
+});
+
+// ---- Bouton filtre (repli/déploie la ligne de filtre) ----
+document.getElementById('annFilterToggle').addEventListener('click', () => {
+  document.getElementById('annFilterRow').classList.toggle('open');
+});
+
+// ---- Cloche mobile : ouvre le tiroir + marque comme vu ----
+document.getElementById('bellBtn').addEventListener('click', () => {
+  document.getElementById('announcementsSidebar').classList.add('open');
+  document.getElementById('annBackdrop').classList.add('open');
+  document.body.classList.add('no-scroll');
+  localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
+  unseenAnnouncementIds.clear();
+  updateBellBadge();
+});
+document.getElementById('annBackdrop').addEventListener('click', closeAnnouncementsDrawer);
+function closeAnnouncementsDrawer(){
+  document.getElementById('announcementsSidebar').classList.remove('open');
+  document.getElementById('annBackdrop').classList.remove('open');
+  document.body.classList.remove('no-scroll');
+}
+
+// ---- Nouvelle annonce ----
+function openAnnouncementModal(){
+  document.getElementById('annCreateAs').textContent = `Publié en tant que ${currentUploader.prenom} ${currentUploader.nom}`;
+  openOverlay('annCreateOverlay');
+}
+
+document.getElementById('annCreateSubmit').addEventListener('click', async () => {
+  const errEl = document.getElementById('annCreateError');
+  errEl.style.display = 'none';
+  const btn = document.getElementById('annCreateSubmit');
+
+  const titre = document.getElementById('annTitre').value.trim();
+  const type = document.getElementById('annType').value;
+  const description = document.getElementById('annDescription').value.trim();
+  const contenu = document.getElementById('annContenu').value.trim();
+
+  if (!titre || !type || !description || !contenu){
+    errEl.textContent = 'Tous les champs sont obligatoires.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Publication...';
+
+  const { error } = await sb.from('announcements').insert({
+    titre, type, description, contenu, auteur_id: currentUploader.id
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Publier';
+
+  if (error){
+    errEl.textContent = error.message;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  closeOverlay('annCreateOverlay');
+  document.getElementById('annTitre').value = '';
+  document.getElementById('annDescription').value = '';
+  document.getElementById('annContenu').value = '';
+  loadAnnouncements();
+});
+
+// ---- Mesure la hauteur réelle du header pour aligner la sidebar (desktop) ----
+function syncHeaderHeight(){
+  const h = document.querySelector('header').offsetHeight;
+  document.documentElement.style.setProperty('--header-h', h + 'px');
+}
+window.addEventListener('resize', syncHeaderHeight);
+syncHeaderHeight();
+
+// ============================================================
 // START
 // ============================================================
 loadDocs();
+loadAnnouncements();
 </script>
 </body>
 </html>
